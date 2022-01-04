@@ -191,18 +191,25 @@ def get_data_from_equipamentos_sheet():
     wb = load_workbook(filename, data_only=True)
     window.destroy()
     equipamentos = []
-
+    need_attachments = False
     for ws_name in wb.sheetnames:
         if ws_name.lower() in SHEETS:
             current_working_sheet = wb[ws_name]
-            print(f'Insira a ET do {ws_name}')
-            et = get_et()
+            for row in range(3, current_working_sheet.max_row):
+                current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
+                if current_qtd_cell_value:
+                    need_attachments = True
+
+            if need_attachments:
+                et = get_et()
+                print(f'Insira a ET: {ws_name}')
 
             for row in range(3, current_working_sheet.max_row):
                 current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
                 current_descricao_cell_value = current_working_sheet[f'{DESCRICAO_COLUMN}{row}'].value
                 current_voltage_cell_value = current_working_sheet[f'{VOLTAGE_COLUMN}{row}'].value
                 if current_qtd_cell_value:
+                    need_attachments = True
                     group = ws_name.lower()
                     descricao = current_descricao_cell_value
                     voltage_class = find_voltage_class(
@@ -211,6 +218,8 @@ def get_data_from_equipamentos_sheet():
                     new_equipamento = Equipamento(
                         voltage_class, group, qtd, descricao, et)
                     equipamentos.append(new_equipamento)
+
+        need_attachments = False
 
     return equipamentos
 
@@ -259,7 +268,7 @@ for fornecedor in resumo:
             <div>
                 <p>{tratamento}, {introducao}</p>
                 <p>Pedimos o orçamento dos seguintes items conforme a tebela:</p>
-                <table>
+                <table style="border-collapse:collapse">
                     <tr style="color:white; background-color:blue";>
                         <th">Item</th>
                         <th>Descrição</th>
