@@ -3,6 +3,7 @@ from tkinter.filedialog import askopenfilename
 import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
+import datetime
 
 import win32com.client as win32
 
@@ -241,12 +242,21 @@ for fornecedor in FORNECEDORES:
 
 for fornecedor in resumo:
     contatos = FORNECEDORES[fornecedor]['contatos']
+    hora = datetime.datetime.now().ctime()
+    hora = int(hora[11:13])
+
+    if hora in range(0, 13):
+        introducao = 'bom dia'
+    if hora in range(13, 18):
+        introducao = 'boa Tarde'
+    if hora in range(18, 24):
+        introducao = 'boa noite'
+
     if len(contatos) > 1:
         tratamento = 'Prezados'
-        introducao = 'como estão?'
     if len(contatos) == 1:
-        tratamento = contatos[0]['tratamento']
-        introducao = contatos[0]['nome'] + ', '
+        tratamento = contatos[0]['tratamento'].capitalize()
+        introducao = contatos[0]['nome'] + introducao
 
     text = ''
     item = 1
@@ -255,10 +265,11 @@ for fornecedor in resumo:
         if eq.et:
             ets.append(eq.et)
 
-        TABLE_STYLE = 'border-collapse:collapse; margin: 5px; font-size: 15px; width: 350px;'
+        TEXT_COLOR = '#3c4064'
+        TABLE_STYLE = 'border-collapse:collapse; margin: 5px; font-size: 14px; width: 500px;'
         TR_STYLE = 'background-color:#154c79; color: white; font-weight:bold;border: 1px solid; border: 1px solid'
         TH_STYLE = 'padding: 2px 5px; border: 1px solid'
-        TD_STYLE = 'text-align:center; padding: 2px 5px; border: 1px solid; background-color: #f3f3f3'
+        TD_STYLE = 'text-align:center; padding: 2px 5px; border: 1px solid; background-color: white'
 
         text += f"""
         <tr'>
@@ -268,19 +279,23 @@ for fornecedor in resumo:
         </tr>
         """
         item += 1
-
         body = f"""
                 <div>
-                <p>{tratamento}, {introducao}</p>
-                <p>Pedimos o orçamento dos seguintes items conforme a tebela:</p>
+                <p style='color: {TEXT_COLOR}'p>{tratamento}, {introducao}, </p>
+                <p style='color: {TEXT_COLOR}'p>Devido à necessidade do setor comercial da Vision Engenharia, solicitamos o orçamento dos equipamentos destacados na tabela a seguir. O anexo contém mais informações a serem consideradas.</p>
                 <table style='{TABLE_STYLE}'>
                         <tr style='{TR_STYLE}'>
-                            <th style='{TH_STYLE}'>Item</th>
-                            <th style='{TH_STYLE}'>Descrição</th>
-                            <th style='{TH_STYLE}'>Qtd</th>
+                            <th style='{TH_STYLE}'>ITEM</th>
+                            <th style='{TH_STYLE}'>DESCRIÇÃO</th>
+                            <th style='{TH_STYLE}'>QTD</th>
                         </tr>
                     {text}   
                 </table>
+                    <p style='color: {TEXT_COLOR}'>O prazo máximo para a cotação é segunda-feira, dia 10/01/2022</p>
+                    <p style='color: {TEXT_COLOR}'>Observações:</p>
+                    <p style='color: {TEXT_COLOR}'>- Caso não seja possível realizar o orçamento dentro do prazo, favor informar em resposta a este e-mail;</p>
+                    <p style='color: {TEXT_COLOR}'>- Favor responder a todos os que estão em cópia.</p>
+                    <p style='color: {TEXT_COLOR}'>Desde já, a Vision agradece o seu apoio e a sua atenção e nos colocamos à disposição para sanar quaisquer dúvidas sobre o orçamento.</p>
                 </div>
             """
 
