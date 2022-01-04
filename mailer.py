@@ -255,29 +255,35 @@ for fornecedor in resumo:
         if eq.et:
             ets.append(eq.et)
 
+        TABLE_STYLE = 'border-collapse:collapse; margin: 5px; font-size: 15px; width: 350px;'
+        TR_STYLE = 'background-color:#154c79; color: white; font-weight:bold;border: 1px solid; border: 1px solid'
+        TH_STYLE = 'padding: 2px 5px; border: 1px solid'
+        TD_STYLE = 'text-align:center; padding: 2px 5px; border: 1px solid; background-color: #f3f3f3'
+
         text += f"""
-        <tr>
-            <td>{item}</td>
-            <td>{eq.descricao}</td>
-            <td>{eq.qtd}</td>
+        <tr'>
+            <td style='{TD_STYLE}'>{item}</td>
+            <td style='{TD_STYLE}'>{eq.descricao}</td>
+            <td style='{TD_STYLE}'>{eq.qtd}</td>
         </tr>
         """
         item += 1
 
         body = f"""
-            <div>
+                <div>
                 <p>{tratamento}, {introducao}</p>
                 <p>Pedimos o orçamento dos seguintes items conforme a tebela:</p>
-                <table style="border-collapse:collapse">
-                    <tr style="color:white; background-color:blue";>
-                        <th">Item</th>
-                        <th>Descrição</th>
-                        <th>Qtd</th>
-                    </tr>
-                    {text}    
+                <table style='{TABLE_STYLE}'>
+                        <tr style='{TR_STYLE}'>
+                            <th style='{TH_STYLE}'>Item</th>
+                            <th style='{TH_STYLE}'>Descrição</th>
+                            <th style='{TH_STYLE}'>Qtd</th>
+                        </tr>
+                    {text}   
                 </table>
-            </div>
+                </div>
             """
+
     to = []
     for contato in contatos:
         to.append(contato['email'])
