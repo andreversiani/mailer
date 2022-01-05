@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, askopenfilenames
 import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
@@ -156,16 +156,16 @@ class Emailer:
         email.Subject = self.subject
         if self.attachments:
             for attachments in self.attachments:
-                email.Attachments.Add(attachments)
+                for attachment in attachments:
+                    email.Attachments.Add(attachment)
         email.CC = 'comercialenergia@visionsistemas.com.br'
 
 
 def get_et():
-
     window = Tk()
     window.withdraw()
-    filename = askopenfilename()
-    et = filename
+    et = askopenfilenames()
+    print(et)
     window.destroy()
     if et != '':
         return et
@@ -264,7 +264,7 @@ for fornecedor in FORNECEDORES:
         try:
             validator = FORNECEDORES[fornecedor][equipamento.tensao][equipamento.type]
         except Exception as e:
-            pass
+            print(e)
         if validator:
             if fornecedor not in resumo:
                 resumo.update(
@@ -280,7 +280,7 @@ for fornecedor in resumo:
     if hora in range(0, 13):
         introducao = 'bom dia'
     if hora in range(13, 18):
-        introducao = 'boa Tarde'
+        introducao = 'boa tarde'
     if hora in range(18, 24):
         introducao = 'boa noite'
 
@@ -301,6 +301,12 @@ for fornecedor in resumo:
     item = 1
     ets = []
     for eq in resumo[fornecedor]:
+
+        equipamentos = []
+
+        if eq.type not in equipamentos:
+            equipamentos.append(eq.type.capitalize())
+
         if eq.et:
             ets.append(eq.et)
 
@@ -343,6 +349,8 @@ for fornecedor in resumo:
         to.append(contato['email'])
     to = ';'.join(to)
 
-    subject = f'0006|RFQ{main_widget.num_proposta} - Cotação [{fornecedor}]'
+    equipamentos = ', '.join(equipamentos)
+
+    subject = f'0006|RFQ{main_widget.num_proposta} - Cotação {equipamentos} [{fornecedor}]'
     emailer = Emailer(to, subject, body, ets)
     emailer.prepare_emails()
