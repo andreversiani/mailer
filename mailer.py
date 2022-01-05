@@ -4,8 +4,10 @@ import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 import datetime
+from openpyxl.utils.datetime import MAC_EPOCH
 
 import win32com.client as win32
+from win32com.client.makepy import main
 
 FORNECEDORES = {
 
@@ -157,11 +159,6 @@ class Emailer:
         email.CC = 'comercialenergia@visionsistemas.com.br'
 
 
-class Fornecedor:
-    def __init__(self, information):
-        self.information = information
-
-
 def get_et():
 
     window = Tk()
@@ -225,8 +222,36 @@ def get_data_from_equipamentos_sheet():
     return equipamentos
 
 
-equipamentos = get_data_from_equipamentos_sheet()
+class Main_widget():
 
+    def __init__(self):
+        self.root = Tk()
+        self.num_proposta = ''
+        self.dias = ''
+        self.root.title('Disparador de Cotações')
+        Label(self.root, text='Número da Proposta:').pack()
+        self.e1 = Entry(self.root)
+        self.e1.pack()
+        Label(self.root, text='Quatidade de dias para receber a cotação:').pack()
+        self.e2 = Entry(self.root)
+        self.e2.pack()
+        b = Button(text='Pronto', command=self.handle_click)
+        b.pack()
+        self.root.mainloop()
+
+    def handle_click(self):
+        self.num_proposta = self.e1.get()
+        self.dias = self.e2.get()
+        self.root.destroy()
+
+
+def init():
+    main_widget = Main_widget()
+    equipamentos = get_data_from_equipamentos_sheet()
+    return main_widget, equipamentos
+
+
+main_widget, equipamentos = init()
 resumo = {}
 for fornecedor in FORNECEDORES:
     for equipamento in equipamentos:
@@ -241,6 +266,7 @@ for fornecedor in FORNECEDORES:
             resumo[fornecedor].append(equipamento)
 
 for fornecedor in resumo:
+
     contatos = FORNECEDORES[fornecedor]['contatos']
     hora = datetime.datetime.now().ctime()
     hora = int(hora[11:13])
@@ -258,6 +284,14 @@ for fornecedor in resumo:
         tratamento = contatos[0]['tratamento'].capitalize()
         introducao = contatos[0]['nome'] + introducao
 
+    date = str(datetime.date.today() +
+               datetime.timedelta(days=int(main_widget.dias)))
+    year = date[0:4]
+    month = date[5:7]
+    date = date[9:]
+    date = f'{date}/{month}/{year}'
+    print(date)
+
     text = ''
     item = 1
     ets = []
@@ -268,8 +302,8 @@ for fornecedor in resumo:
         TEXT_COLOR = '#3c4064'
         TABLE_STYLE = 'border-collapse:collapse; margin: 5px; font-size: 14px; width: 500px;'
         TR_STYLE = 'background-color:#154c79; color: white; font-weight:bold;border: 1px solid; border: 1px solid'
-        TH_STYLE = 'padding: 2px 5px; border: 1px solid'
-        TD_STYLE = 'text-align:center; padding: 2px 5px; border: 1px solid; background-color: white'
+        TH_STYLE = 'padding: 1px 4px; border: 1px solid'
+        TD_STYLE = 'text-align:center; padding: 1px 4px; border: 1px solid; background-color: white'
 
         text += f"""
         <tr'>
@@ -286,12 +320,12 @@ for fornecedor in resumo:
                 <table style='{TABLE_STYLE}'>
                         <tr style='{TR_STYLE}'>
                             <th style='{TH_STYLE}'>ITEM</th>
-                            <th style='{TH_STYLE}'>DESCRIÇÃO</th>
+                            <th style='{TH_STYLE}'>DESCRIÇÃO</th>s
                             <th style='{TH_STYLE}'>QTD</th>
                         </tr>
                     {text}   
                 </table>
-                    <p style='color: {TEXT_COLOR}'>O prazo máximo para a cotação é segunda-feira, dia 10/01/2022</p>
+                    <p style='color: {TEXT_COLOR}'>O prazo máximo para a cotação é dia {date}.</p>
                     <p style='color: {TEXT_COLOR}'>Observações:</p>
                     <p style='color: {TEXT_COLOR}'>- Caso não seja possível realizar o orçamento dentro do prazo, favor informar em resposta a este e-mail;</p>
                     <p style='color: {TEXT_COLOR}'>- Favor responder a todos os que estão em cópia.</p>
@@ -304,5 +338,6 @@ for fornecedor in resumo:
         to.append(contato['email'])
     to = ';'.join(to)
 
-    emailer = Emailer(to, 'Cotação', body, ets)
+    subject = f'0006|RFQ{main_widget.num_proposta} - Cotação [{fornecedor}]'
+    emailer = Emailer(to, subject, body, ets)
     emailer.prepare_emails()
