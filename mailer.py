@@ -5,6 +5,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 import datetime
 from openpyxl.utils.datetime import MAC_EPOCH
+import time
 
 import win32com.client as win32
 from win32com.client.makepy import main
@@ -184,6 +185,7 @@ def find_voltage_class(num):
 
 def get_data_from_equipamentos_sheet():
     window = Tk()
+    window.eval('tk::PlaceWindow . center')
     window.withdraw()
     filename = askopenfilename()
     wb = load_workbook(filename, data_only=True)
@@ -199,8 +201,11 @@ def get_data_from_equipamentos_sheet():
                     need_attachments = True
 
             if need_attachments:
+                root = Tk()
+                root.geometry('300x50+0+0')
+                Label(root, text=f'Insira a ET: {ws_name}').pack()
                 et = get_et()
-                print(f'Insira a ET: {ws_name}')
+                root.destroy()
 
             for row in range(3, current_working_sheet.max_row):
                 current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
@@ -226,6 +231,7 @@ class Main_widget():
 
     def __init__(self):
         self.root = Tk()
+        self.root.eval('tk::PlaceWindow . center')
         self.num_proposta = ''
         self.dias = ''
         self.root.title('Disparador de Cotações')
@@ -290,7 +296,6 @@ for fornecedor in resumo:
     month = date[5:7]
     date = date[9:]
     date = f'{date}/{month}/{year}'
-    print(date)
 
     text = ''
     item = 1
@@ -320,7 +325,7 @@ for fornecedor in resumo:
                 <table style='{TABLE_STYLE}'>
                         <tr style='{TR_STYLE}'>
                             <th style='{TH_STYLE}'>ITEM</th>
-                            <th style='{TH_STYLE}'>DESCRIÇÃO</th>s
+                            <th style='{TH_STYLE}'>DESCRIÇÃO</th>
                             <th style='{TH_STYLE}'>QTD</th>
                         </tr>
                     {text}   
