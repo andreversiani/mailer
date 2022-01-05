@@ -41,15 +41,15 @@ FORNECEDORES = {
             'banco de capacitor': True,
             'filtro de harmônicos': True,
             'bobina de bloqueio': False,
-            'cububículo de média tensão': True,
+            'cubículo de média tensão': True,
             'transformado de serviço auxiliar': False,
             'resistor de aterramento': False,
             'transformador': True
         },
         'BT': {
             'banco de baterias': False,
-            'retificador': False,
-            'gerador': False
+            'retificador': True,
+            'gerador': True
         },
         'contatos':
         [
@@ -165,7 +165,6 @@ def get_et():
     window = Tk()
     window.withdraw()
     et = askopenfilenames()
-    print(et)
     window.destroy()
     if et != '':
         return et
@@ -287,8 +286,8 @@ for fornecedor in resumo:
     if len(contatos) > 1:
         tratamento = 'Prezados'
     if len(contatos) == 1:
-        tratamento = contatos[0]['tratamento'].capitalize()
-        introducao = contatos[0]['nome'] + introducao
+        tratamento = contatos[0]['tratamento'].capitalize() + \
+            contatos[0]['nome']
 
     date = str(datetime.date.today() +
                datetime.timedelta(days=int(main_widget.dias)))
@@ -307,7 +306,7 @@ for fornecedor in resumo:
         if eq.type not in equipamentos:
             equipamentos.append(eq.type.capitalize())
 
-        if eq.et:
+        if eq.et not in ets:
             ets.append(eq.et)
 
         TEXT_COLOR = '#3c4064'
