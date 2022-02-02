@@ -10,113 +10,44 @@ import time
 import win32com.client as win32
 from win32com.client.makepy import main
 
-FORNECEDORES = {
 
-    'ABB': {
-        'UAT': {
-            'disjuntor': True,
-            'chaves': True,
-            'tis': True,
-            'para-raios': True,
-            'bando de capacitor': True,
-            'filtro de harmônicos': False,
-            'bobina de bloqueio': False,
-            'transformador': True
-        },
-        'AT': {
-            'disjuntor': True,
-            'chaves': True,
-            'tis': True,
-            'para-raios': True,
-            'banco de capacitor': True,
-            'filtro de harmônicos': False,
-            'bobina de bloqueio': False,
-            'transformador': True
-        },
-        'MT': {
-            'disjuntor': True,
-            'chaves': False,
-            'tis': False,
-            'para-raios': False,
-            'banco de capacitor': True,
-            'filtro de harmônicos': True,
-            'bobina de bloqueio': False,
-            'cubículo de média tensão': True,
-            'transformado de serviço auxiliar': False,
-            'resistor de aterramento': False,
-            'transformador': True
-        },
-        'BT': {
-            'banco de baterias': False,
-            'retificador': True,
-            'gerador': True
-        },
-        'contatos':
-        [
-            {
-                'nome': 'Márcio',
-                'sobrenome': 'Tanese',
-                'email': 'andreversiani@visionsistemas.com.br',
-                'tratamento': 'para-raiosezado',
-            },
-            {
-                'nome': 'Gabriel',
-                'sobrenome': 'Queiroz',
-                'email': 'andreversiani01@gmail.com',
-                'tratamento': 'para-raiosezado'
+def get_database(wb):
+    fornecedores = {}
+    for ws_name in wb.sheetnames:
+        if 'fornecedor' in ws_name.lower():
+            current_working_sheet = wb[ws_name]
+            company_name = current_working_sheet['A1'].value.upper()
+            fornecedores[company_name] = {}
+            voltage_columns = {
+                'B': 'UAT',
+                'C': 'AT',
+                'D': 'MT',
+                'E': 'BT'
             }
-        ]
-    },
-    'WEG': {
-        'UAT': {
-            'disjuntor': False,
-            'chaves': False,
-            'tis': False,
-            'para-raios': False,
-            'bando de capacitor': False,
-            'filtro de harmônicos': False,
-            'bobina de bloqueio': False,
-            'transformador': False
-        },
-        'AT': {
-            'disjuntor': False,
-            'chaves': False,
-            'tis': False,
-            'para-raios': False,
-            'banco de capacitor': False,
-            'filtro de harmônicos': False,
-            'bobina de bloqueio': False,
-            'transformador': False
-        },
-        'MT': {
-            'disjuntor': False,
-            'chaves': False,
-            'tis': False,
-            'para-raios': False,
-            'banco de capacitor': True,
-            'filtro de harmônicos': True,
-            'bobina de bloqueio': False,
-            'cubículo de média tensão': True,
-            'transformado de serviço auxiliar': False,
-            'resistor de aterramento': False,
-            'transformador': False
-        },
-        'BT': {
-            'banco de baterias': True,
-            'retificador': True,
-            'gerador': True
-        },
-        'contatos':
-        [
-            {
-                'nome': 'Márcio',
-                'sobrenome': 'Tanese',
-                'email': 'lumini2@hotmail.com.br',
-                'tratamento': 'prezado',
-            }
-        ]
-    }
-}
+            for column in voltage_columns:
+                d = fornecedores[company_name][voltage_columns[column]] = {}
+                for row_num in range(4, 18):
+                    equipamento = current_working_sheet[f'A{row_num}'].value
+                    fornecimento = current_working_sheet[f'{column}{row_num}'].value
+                    d[equipamento] = True if fornecimento == 'Sim' else False
+
+            contatos = fornecedores[company_name]['contatos'] = []
+            for row_num in range(4, 18):
+                nome = current_working_sheet[f'G{row_num}'].value
+                sobrenome = current_working_sheet[f'H{row_num}'].value
+                tratamento = current_working_sheet[f'I{row_num}'].value
+                email = current_working_sheet[f'J{row_num}'].value
+
+                if nome != None:
+                    info = {
+                        'nome': nome,
+                        'sobrenome': sobrenome,
+                        'email': email,
+                        'tratamento': tratamento,
+                    }
+                    contatos.append(info)
+
+    return fornecedores
 
 
 DESCRICAO_COLUMN = 'B'
@@ -190,6 +121,8 @@ def get_data_from_equipamentos_sheet():
     wb = load_workbook(filename, data_only=True)
     window.destroy()
     equipamentos = []
+
+    fornecedores = get_database(wb)
     need_attachments = False
     for ws_name in wb.sheetnames:
         if ws_name.lower() in SHEETS:
@@ -223,7 +156,7 @@ def get_data_from_equipamentos_sheet():
 
         need_attachments = False
 
-    return equipamentos
+    return equipamentos, fornecedores
 
 
 class Main_widget():
@@ -252,11 +185,11 @@ class Main_widget():
 
 def init():
     main_widget = Main_widget()
-    equipamentos = get_data_from_equipamentos_sheet()
-    return main_widget, equipamentos
+    equipamentos, FORNECEDORES = get_data_from_equipamentos_sheet()
+    return main_widget, equipamentos, FORNECEDORES
 
 
-main_widget, equipamentos = init()
+main_widget, equipamentos, FORNECEDORES = init()
 resumo = {}
 for fornecedor in FORNECEDORES:
     for equipamento in equipamentos:
@@ -350,6 +283,6 @@ for fornecedor in resumo:
 
     equipamentos = ', '.join(equipamentos)
 
-    subject = f'0006|RFQ{main_widget.num_proposta} - Cotação {equipamentos} [{fornecedor}]'
+    subject = f'0006 | RFQ{main_widget.num_proposta} - Cotação {equipamentos} [{fornecedor}]'
     emailer = Emailer(to, subject, body, ets)
     emailer.prepare_emails()
