@@ -85,7 +85,9 @@ class Emailer:
                                 self.body, email.HTMLBody)
         email.To = self.receiver
         email.Subject = self.subject
-        if self.attachments:
+        if self.attachments and len(self.attachments) > 0:
+            if None in self.attachments:
+                self.attachments.remove(None)
             for attachments in self.attachments:
                 for attachment in attachments:
                     email.Attachments.Add(attachment)
@@ -149,7 +151,7 @@ def get_data_from_equipamentos_sheet(wb):
             if need_attachments:
                 root = Tk()
                 root.geometry('300x50+0+0')
-                Label(root, text=f'Insira a ET: {ws_name}').pack()
+                Label(root, text=f'Insira os anexos para: {ws_name}').pack()
                 et = get_et()
                 root.destroy()
 
@@ -217,9 +219,25 @@ def make_fornecedores_resumo(wb):
 
 def build():
     main_widget = Main_widget()
-    Tk().withdraw()
+
+    root = Tk()
+    root.geometry('300x50+0+0')
+    Label(root, text=f'Selecione a planilha "Equipamentos"').pack()
     wb_name = askopenfilename()
+    Tk().withdraw()
+    root.destroy()
     wb = load_workbook(wb_name, data_only=True, keep_vba=True)
+
+    '''Limpa a sheet de cobrar cotações'''
+    sheet = wb['Cobrar Cotações']
+    for row in range(3, 100):
+        a_cell = sheet[f'A{row}']
+        b_cell = sheet[f'B{row}']
+        c_cell = sheet[f'C{row}']
+
+        a_cell.value = None
+        b_cell.value = None
+        c_cell.value = None
 
     resumo, FORNECEDORES = make_fornecedores_resumo(wb)
 
