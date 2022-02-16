@@ -269,11 +269,11 @@ def build():
         text = ''
         item = 1
         ets = []
+        equipamentos = []
+
         for eq in resumo[fornecedor]:
 
-            equipamentos = []
-
-            if eq.type not in equipamentos:
+            if eq.type.capitalize() not in equipamentos:
                 equipamentos.append(eq.type.capitalize())
 
             if eq.et not in ets:
