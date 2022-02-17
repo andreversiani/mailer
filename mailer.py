@@ -97,16 +97,14 @@ class Emailer:
         sheet = wb['Cobrar Cotações']
 
         for row in range(3, 100):
+            descricao_cell = sheet[f'B{row}']
+            check_cell = sheet[f'C{row}']
+            subject_cell = sheet[f'D{row}']
 
-            a_cell = sheet[f'A{row}']
-            b_cell = sheet[f'B{row}']
-            c_cell = sheet[f'C{row}']
-
-            if a_cell.value == None:
-                a_cell.value = fornecedor
-                print(row, a_cell.value)
-                b_cell.value = 'Não'
-                c_cell.value = self.subject
+            if descricao_cell.value == None:
+                descricao_cell.value = fornecedor
+                check_cell.value = 'Não'
+                subject_cell.value = self.subject
                 break
 
 
@@ -231,13 +229,13 @@ def build():
     '''Limpa a sheet de cobrar cotações'''
     sheet = wb['Cobrar Cotações']
     for row in range(3, 100):
-        a_cell = sheet[f'A{row}']
-        b_cell = sheet[f'B{row}']
-        c_cell = sheet[f'C{row}']
+        descricao_cell = sheet[f'A{row}']
+        check_cell = sheet[f'B{row}']
+        subject_cell = sheet[f'C{row}']
 
-        a_cell.value = None
-        b_cell.value = None
-        c_cell.value = None
+        descricao_cell.value = None
+        check_cell.value = None
+        subject_cell.value = None
 
     resumo, FORNECEDORES = make_fornecedores_resumo(wb)
 
