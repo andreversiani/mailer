@@ -50,14 +50,6 @@ def get_database(wb):
     return fornecedores
 
 
-DESCRICAO_COLUMN = 'B'
-VOLTAGE_COLUMN = 'E'
-
-SHEETS = ['transformador', 'disjuntor', 'chaves', 'tis', 'para-raios', 'banco de capacitor',
-          'resistor de aterramento', 'banco de baterias', 'retificador', 'filtro de harmônicos',
-          'transformador de serviço aux', 'cubículo de média tensão', 'bobina de bloqueio']
-
-
 class Equipamento:
 
     def __init__(self, tensao, type, qtd, descricao, et=None):
@@ -118,17 +110,6 @@ def get_et():
     return None
 
 
-def find_voltage_class(num):
-    if num in range(0, 1000):
-        return 'BT'
-    if num in range(1000, 40000):
-        return 'MT'
-    if num in range(40000, 250000):
-        return 'AT'
-    if num in range(250000, 600000):
-        return 'UAT'
-
-
 def get_data_from_equipamentos_sheet(wb):
     window = Tk()
     window.eval('tk::PlaceWindow . center')
@@ -136,48 +117,35 @@ def get_data_from_equipamentos_sheet(wb):
     window.destroy()
     equipamentos = []
 
-    current_working_sheet = wb['Transformador']
+    current_working_sheet = wb['Equipamentos']
+    already_have_attachments = []
 
-    for column in range(1, 200):
-        current_cell_value = str(
-            current_working_sheet[f'{get_column_letter(column)}2'].value)
-        if current_cell_value != None and current_cell_value.lower() == 'total':
-            QTD_COLUMN = get_column_letter(column).upper()
+    descricao_column = 'B'
+    voltage_column = 'D'
+    qtd_column = 'C'
+    eq_type_column = 'E'
 
-    fornecedores = get_database(wb)
-    need_attachments = False
-    for ws_name in wb.sheetnames:
-        if ws_name.lower() in SHEETS:
-            current_working_sheet = wb[ws_name]
-            for row in range(3, current_working_sheet.max_row):
-                current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
-                if current_qtd_cell_value:
-                    need_attachments = True
+    for row in range(3, current_working_sheet.max_row):
+        qtd_cell_value = current_working_sheet[f'{qtd_column}{row}'].value
+        if qtd_cell_value != None:
+            descricao_cell_value = current_working_sheet[f'{descricao_column}{row}'].value
+            voltage_cell_value = current_working_sheet[f'{voltage_column}{row}'].value
+            eq_type_cell_value = current_working_sheet[f'{eq_type_column}{row}'].value
 
-            if need_attachments:
+            if eq_type_cell_value not in already_have_attachments:
                 root = Tk()
                 root.geometry('300x50+0+0')
-                Label(root, text=f'Insira os anexos para: {ws_name}').pack()
+                Label(
+                    root, text=f'Insira os anexos para: {eq_type_cell_value}').pack()
                 et = get_et()
                 root.destroy()
 
-            for row in range(3, current_working_sheet.max_row):
-                current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
-                current_descricao_cell_value = current_working_sheet[f'{DESCRICAO_COLUMN}{row}'].value
-                current_voltage_cell_value = current_working_sheet[f'{VOLTAGE_COLUMN}{row}'].value
-                if current_qtd_cell_value:
-                    need_attachments = True
-                    group = ws_name.lower()
-                    descricao = current_descricao_cell_value
-                    voltage_class = find_voltage_class(
-                        current_voltage_cell_value * 1000)
-                    qtd = current_qtd_cell_value
-                    new_equipamento = Equipamento(
-                        voltage_class, group, qtd, descricao, et)
-                    equipamentos.append(new_equipamento)
+            new_eq = Equipamento(voltage_cell_value,
+                                 eq_type_cell_value, qtd_cell_value, descricao_cell_value, et)
 
-        need_attachments = False
+            equipamentos.append(new_eq)
 
+    fornecedores = get_database(wb)
     return equipamentos, fornecedores
 
 
