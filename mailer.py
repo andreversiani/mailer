@@ -4,7 +4,6 @@ import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 import datetime
-from openpyxl.utils.datetime import MAC_EPOCH
 import time
 
 import win32com.client as win32
@@ -51,7 +50,6 @@ def get_database(wb):
 
 
 class Equipamento:
-
     def __init__(self, tensao, type, qtd, descricao, et=None):
         self.et = et
         self.tensao = tensao
@@ -235,10 +233,11 @@ def build():
 
         date = str(datetime.date.today() +
                    datetime.timedelta(days=int(main_widget.dias)))
+
         year = date[0:4]
         month = date[5:7]
-        date = date[9:]
-        date = f'{date}/{month}/{year}'
+        day = date[8:]
+        date = f'{day}/{month}/{year}'
 
         text = ''
         item = 1
@@ -298,7 +297,7 @@ def build():
         emailer = Emailer(to, subject, body, ets)
         emailer.prepare_emails()
 
-        emailer.create_summary_sheet(fornecedor, wb)
+        #emailer.create_summary_sheet(fornecedor, wb)
 
         wb.save(wb_name)
 
