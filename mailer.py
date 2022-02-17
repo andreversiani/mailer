@@ -263,7 +263,7 @@ def build():
                    datetime.timedelta(days=int(main_widget.dias)))
         year = date[0:4]
         month = date[5:7]
-        date = date[9:]
+        date = date[8:]
         date = f'{date}/{month}/{year}'
 
         text = ''
