@@ -51,7 +51,6 @@ def get_database(wb):
 
 
 DESCRICAO_COLUMN = 'B'
-QTD_COLUMN = 'AP'
 VOLTAGE_COLUMN = 'E'
 
 SHEETS = ['transformador', 'disjuntor', 'chaves', 'tis', 'para-raios', 'banco de capacitor',
@@ -104,7 +103,6 @@ class Emailer:
 
             if a_cell.value == None:
                 a_cell.value = fornecedor
-                print(row, a_cell.value)
                 b_cell.value = 'Não'
                 c_cell.value = self.subject
                 break
@@ -137,6 +135,14 @@ def get_data_from_equipamentos_sheet(wb):
     window.withdraw()
     window.destroy()
     equipamentos = []
+
+    current_working_sheet = wb['Transformador']
+
+    for column in range(1, 200):
+        current_cell_value = str(
+            current_working_sheet[f'{get_column_letter(column)}2'].value)
+        if current_cell_value != None and current_cell_value.lower() == 'total':
+            QTD_COLUMN = get_column_letter(column).upper()
 
     fornecedores = get_database(wb)
     need_attachments = False
