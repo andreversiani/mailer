@@ -218,10 +218,10 @@ def build():
     '''Limpa a sheet de cobrar cotações'''
     sheet = wb['Cobrar Cotações']
     for row in range(3, 100):
+
         fonecedor_cell = sheet[f'A{row}']
         check_cell = sheet[f'B{row}']
         subject_cell = sheet[f'C{row}']
-
         fonecedor_cell.value = None
         check_cell.value = None
         subject_cell.value = None
@@ -253,6 +253,7 @@ def build():
         month = date[5:7]
         day = date[8:]
         date = f'{day}/{month}/{year}'
+
 
         text = ''
         item = 1
