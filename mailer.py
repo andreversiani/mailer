@@ -4,8 +4,8 @@ import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 import datetime
-from openpyxl.utils.datetime import MAC_EPOCH
 import time
+from copy import copy
 
 import win32com.client as win32
 from win32com.client.makepy import main
@@ -50,17 +50,7 @@ def get_database(wb):
     return fornecedores
 
 
-DESCRICAO_COLUMN = 'B'
-QTD_COLUMN = 'AP'
-VOLTAGE_COLUMN = 'E'
-
-SHEETS = ['transformador', 'disjuntor', 'chaves', 'tis', 'para-raios', 'banco de capacitor',
-          'resistor de aterramento', 'banco de baterias', 'retificador', 'filtro de harmônicos',
-          'transformador de serviço aux', 'cubículo de média tensão', 'bobina de bloqueio']
-
-
 class Equipamento:
-
     def __init__(self, tensao, type, qtd, descricao, et=None):
         self.et = et
         self.tensao = tensao
@@ -97,12 +87,11 @@ class Emailer:
         sheet = wb['Cobrar Cotações']
 
         for row in range(3, 100):
-            descricao_cell = sheet[f'B{row}']
+            fonecedor_cell = sheet[f'B{row}']
             check_cell = sheet[f'C{row}']
             subject_cell = sheet[f'D{row}']
-
-            if descricao_cell.value == None:
-                descricao_cell.value = fornecedor
+            if fonecedor_cell.value == None:
+                fonecedor_cell.value = fornecedor
                 check_cell.value = 'Não'
                 subject_cell.value = self.subject
                 break
@@ -118,17 +107,6 @@ def get_et():
     return None
 
 
-def find_voltage_class(num):
-    if num in range(0, 1000):
-        return 'BT'
-    if num in range(1000, 40000):
-        return 'MT'
-    if num in range(40000, 250000):
-        return 'AT'
-    if num in range(250000, 600000):
-        return 'UAT'
-
-
 def get_data_from_equipamentos_sheet(wb):
     window = Tk()
     window.eval('tk::PlaceWindow . center')
@@ -136,40 +114,36 @@ def get_data_from_equipamentos_sheet(wb):
     window.destroy()
     equipamentos = []
 
-    fornecedores = get_database(wb)
-    need_attachments = False
-    for ws_name in wb.sheetnames:
-        if ws_name.lower() in SHEETS:
-            current_working_sheet = wb[ws_name]
-            for row in range(3, current_working_sheet.max_row):
-                current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
-                if current_qtd_cell_value:
-                    need_attachments = True
+    current_working_sheet = wb['Equipamentos']
+    already_have_attachments = []
 
-            if need_attachments:
+    descricao_column = 'B'
+    voltage_column = 'D'
+    qtd_column = 'C'
+    eq_type_column = 'E'
+
+    for row in range(3, current_working_sheet.max_row):
+        qtd_cell_value = current_working_sheet[f'{qtd_column}{row}'].value
+        if qtd_cell_value != None:
+            descricao_cell_value = current_working_sheet[f'{descricao_column}{row}'].value
+            voltage_cell_value = current_working_sheet[f'{voltage_column}{row}'].value
+            eq_type_cell_value = current_working_sheet[f'{eq_type_column}{row}'].value
+
+            if eq_type_cell_value not in already_have_attachments:
                 root = Tk()
                 root.geometry('300x50+0+0')
-                Label(root, text=f'Insira os anexos para: {ws_name}').pack()
+                Label(
+                    root, text=f'Insira os anexos para: {eq_type_cell_value}').pack()
                 et = get_et()
                 root.destroy()
+                already_have_attachments.append(eq_type_cell_value)
 
-            for row in range(3, current_working_sheet.max_row):
-                current_qtd_cell_value = current_working_sheet[f'{QTD_COLUMN}{row}'].value
-                current_descricao_cell_value = current_working_sheet[f'{DESCRICAO_COLUMN}{row}'].value
-                current_voltage_cell_value = current_working_sheet[f'{VOLTAGE_COLUMN}{row}'].value
-                if current_qtd_cell_value:
-                    need_attachments = True
-                    group = ws_name.lower()
-                    descricao = current_descricao_cell_value
-                    voltage_class = find_voltage_class(
-                        current_voltage_cell_value * 1000)
-                    qtd = current_qtd_cell_value
-                    new_equipamento = Equipamento(
-                        voltage_class, group, qtd, descricao, et)
-                    equipamentos.append(new_equipamento)
+            new_eq = Equipamento(voltage_cell_value,
+                                 eq_type_cell_value, qtd_cell_value, descricao_cell_value, et)
 
-        need_attachments = False
+            equipamentos.append(new_eq)
 
+    fornecedores = get_database(wb)
     return equipamentos, fornecedores
 
 
@@ -215,6 +189,21 @@ def make_fornecedores_resumo(wb):
     return resumo, FORNECEDORES
 
 
+def write_fornecedor(eq, fornecedor, wb):
+    title_row = 3
+    current_working_sheet = wb[eq.type.capitalize()]
+    current_working_sheet.sheet_state = 'visible'
+    style = copy(
+        current_working_sheet['B3']._style)
+
+    for column in range(5, current_working_sheet.max_column + 1):
+        current_cell = current_working_sheet[f'{get_column_letter(column)}{title_row}']
+        if current_cell.value == None:
+            current_cell.value = fornecedor.upper()
+            current_cell._style = style
+            break
+
+
 def build():
     main_widget = Main_widget()
 
@@ -224,16 +213,16 @@ def build():
     wb_name = askopenfilename()
     Tk().withdraw()
     root.destroy()
-    wb = load_workbook(wb_name, data_only=True, keep_vba=True)
+    wb = load_workbook(wb_name, keep_vba=True)
 
     '''Limpa a sheet de cobrar cotações'''
     sheet = wb['Cobrar Cotações']
     for row in range(3, 100):
-        descricao_cell = sheet[f'A{row}']
+
+        fonecedor_cell = sheet[f'A{row}']
         check_cell = sheet[f'B{row}']
         subject_cell = sheet[f'C{row}']
-
-        descricao_cell.value = None
+        fonecedor_cell.value = None
         check_cell.value = None
         subject_cell.value = None
 
@@ -259,19 +248,21 @@ def build():
 
         date = str(datetime.date.today() +
                    datetime.timedelta(days=int(main_widget.dias)))
+
         year = date[0:4]
         month = date[5:7]
-        date = date[8:]
-        date = f'{date}/{month}/{year}'
+        day = date[8:]
+        date = f'{day}/{month}/{year}'
+
 
         text = ''
         item = 1
         ets = []
+        equipamentos = []
+
         for eq in resumo[fornecedor]:
-
-            equipamentos = []
-
-            if eq.type not in equipamentos:
+            write_fornecedor(eq, fornecedor, wb)
+            if eq.type.capitalize() not in equipamentos:
                 equipamentos.append(eq.type.capitalize())
 
             if eq.et not in ets:
