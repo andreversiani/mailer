@@ -46,14 +46,10 @@ for row in range(3, sheet.max_row + 1):
 
                 TEXT_COLOR = '#3c4064'
                 text = f'''
-
-                    Boa tarde!
-                    Gentiliza informar previsão do envio do orçamento solicitado.
-                    Salientamos que precisamos da cotação o quanto antes.
-                    Agradecemos a atenção e ficamos à disposição.
-
                     <p style='color: {TEXT_COLOR}'p>{get_saudacao().capitalize()}!</p>
                     <p style='color: {TEXT_COLOR}'p>Gentiliza informar previsão do envio do orçamento solicitado.</p>
+                    <p style='color: {TEXT_COLOR}'p>Salientamos que precisamos da cotação o quanto antes.</p>
+                    <p style='color: {TEXT_COLOR}'p>Agradecemos a atenção e ficamos à disposição.</p>
                 '''
 
                 index = reply.HTMLbody.find('>', reply.HTMLbody.find('<body'))
