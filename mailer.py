@@ -5,6 +5,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 import datetime
 import time
+from copy import copy
 
 import win32com.client as win32
 from win32com.client.makepy import main
@@ -135,6 +136,7 @@ def get_data_from_equipamentos_sheet(wb):
                     root, text=f'Insira os anexos para: {eq_type_cell_value}').pack()
                 et = get_et()
                 root.destroy()
+                already_have_attachments.append(eq_type_cell_value)
 
             new_eq = Equipamento(voltage_cell_value,
                                  eq_type_cell_value, qtd_cell_value, descricao_cell_value, et)
@@ -187,6 +189,21 @@ def make_fornecedores_resumo(wb):
     return resumo, FORNECEDORES
 
 
+def write_fornecedor(eq, fornecedor, wb):
+    title_row = 3
+    current_working_sheet = wb[eq.type.capitalize()]
+    current_working_sheet.sheet_state = 'visible'
+    style = copy(
+        current_working_sheet['B3']._style)
+
+    for column in range(5, current_working_sheet.max_column + 1):
+        current_cell = current_working_sheet[f'{get_column_letter(column)}{title_row}']
+        if current_cell.value == None:
+            current_cell.value = fornecedor.upper()
+            current_cell._style = style
+            break
+
+
 def build():
     main_widget = Main_widget()
 
@@ -196,7 +213,7 @@ def build():
     wb_name = askopenfilename()
     Tk().withdraw()
     root.destroy()
-    wb = load_workbook(wb_name, data_only=True, keep_vba=True)
+    wb = load_workbook(wb_name, keep_vba=True)
 
     '''Limpa a sheet de cobrar cotações'''
     sheet = wb['Cobrar Cotações']
@@ -243,7 +260,7 @@ def build():
         equipamentos = []
 
         for eq in resumo[fornecedor]:
-
+            write_fornecedor(eq, fornecedor, wb)
             if eq.type.capitalize() not in equipamentos:
                 equipamentos.append(eq.type.capitalize())
 
